@@ -1,4 +1,6 @@
-﻿namespace TARge25Shop.Models.RealEstate
+﻿using Microsoft.AspNetCore.Http;
+
+namespace TARge25Shop.Models.RealEstate
 {
     public class RealEstateCreateUpdateViewModel
     {
@@ -10,5 +12,10 @@
 
         public DateTime? CreatedAt { get; set; }
         public DateTime? ModifiedAt { get; set; }
+
+        public List<IFormFile> Files { get; set; }
+
+        public IEnumerable<RealEstateImageViewModel> Image { get; set; }
+            = new List<RealEstateImageViewModel>();
     }
 }

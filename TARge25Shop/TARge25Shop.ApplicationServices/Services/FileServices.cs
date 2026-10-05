@@ -5,7 +5,6 @@ using TARge25Shop.Core.Dto;
 using TARge25Shop.Core.ServiceInterface;
 using TARge25Shop.Data;
 
-
 namespace TARge25Shop.ApplicationServices.Services
 {
     public class FileServices : IFileServices
@@ -14,10 +13,10 @@ namespace TARge25Shop.ApplicationServices.Services
         private readonly TARge25ShopContext _context;
 
         public FileServices
-            (
-                IHostEnvironment webHost,
-                TARge25ShopContext context
-            )
+        (
+            IHostEnvironment webHost,
+            TARge25ShopContext context
+        )
         {
             _webHost = webHost;
             _context = context;
@@ -39,16 +38,26 @@ namespace TARge25Shop.ApplicationServices.Services
                 foreach (var file in dto.Files)
                 {
                     //tuleb teha muutuja, kus on failide asukoht e kuhu hakatakse salvestama
-                    string uploadsFolder = Path.Combine(_webHost.ContentRootPath, "wwwroot", "multipleFileUpload");
-                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
+                    string uploadsFolder = Path.Combine(
+                        _webHost.ContentRootPath,
+                        "wwwroot",
+                        "multipleFileUpload"
+                    );
+
+                    string uniqueFileName =
+                        Guid.NewGuid().ToString() + "_" + file.FileName;
+
                     //tuleb kaks ülevalpool olevat muutujat kombineerida üheks
-                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    string filePath = Path.Combine(
+                        uploadsFolder,
+                        uniqueFileName
+                    );
 
                     using (var fileStream = new FileStream(filePath, FileMode.Create))
                     {
                         file.CopyTo(fileStream);
 
-                        //tuleb Domaini teha class FileToApi, 
+                        //tuleb Domaini teha class FileToApi,
                         //kus on muutujad Id, ExistingFilePath ja SpaceshipId
                         FileToApi path = new FileToApi
                         {
@@ -64,6 +73,7 @@ namespace TARge25Shop.ApplicationServices.Services
             }
         }
 
+
         public async Task<FileToApi> RemoveImageFromApi(FileToApiDto dto)
         {
             //kui soovin kustutada faili, siis pean läbi Id pildi ülesse otsima
@@ -71,8 +81,10 @@ namespace TARge25Shop.ApplicationServices.Services
                 .FirstOrDefaultAsync(x => x.Id == dto.Id);
 
             //teha muutuja filePath, mis näitab failide asukohta
-            var filePath = _webHost.ContentRootPath + "\\wwwroot\\multipleFileUpload\\"
-                + imageId.ExistingFilePath;
+            var filePath =
+                _webHost.ContentRootPath +
+                "\\wwwroot\\multipleFileUpload\\" +
+                imageId.ExistingFilePath;
 
             //kui fail asub selles kaustas, siis kustuta
             if (File.Exists(filePath))
@@ -86,6 +98,7 @@ namespace TARge25Shop.ApplicationServices.Services
             return null;
         }
 
+
         //<List<FileToApi>> lisati sellepärast, et faile on mitu, mida kustutada
         public async Task<List<FileToApi>> RemoveImagesFromApi(FileToApiDto[] dtos)
         {
@@ -98,8 +111,10 @@ namespace TARge25Shop.ApplicationServices.Services
                     .FirstOrDefaultAsync(x => x.Id == dto.Id);
 
                 //teha muutuja filePath, mis näitab failide asukohta
-                var filePath = _webHost.ContentRootPath + "\\wwwroot\\multipleFileUpload\\"
-                    + imageId.ExistingFilePath;
+                var filePath =
+                    _webHost.ContentRootPath +
+                    "\\wwwroot\\multipleFileUpload\\" +
+                    imageId.ExistingFilePath;
 
                 //kui fail asub selles kaustas, siis kustuta
                 if (File.Exists(filePath))
@@ -112,6 +127,34 @@ namespace TARge25Shop.ApplicationServices.Services
             }
 
             return null;
+        }
+
+
+        public void UploadFilesToDatabase(RealEstateDto dto,RealEstate domain)
+        {
+            //toimub kontroll, kas on faile voi ei ole 
+            if (dto.Files != null && dto.Files.Count > 0)
+            {
+                foreach (var file in dto.Files)
+                {
+                    //teha muutuja, mis salvestab faili sisu
+                    using (var target = new MemoryStream())
+                    {
+                        FileToDatabase files = new FileToDatabase()
+                        {
+                            Id = Guid.NewGuid(),
+                            ImageTitle = file.FileName,
+                            RealEstateId = domain.Id
+                        };
+
+                        file.CopyTo(target);
+
+                        files.ImageData = target.ToArray();
+
+                        _context.FileToDatabases.AddAsync(files);
+                    }
+                }
+            }
         }
     }
 }
